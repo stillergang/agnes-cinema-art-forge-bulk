@@ -1,0 +1,335 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Agnes Vidéo 5 s — image → vidéo</title>
+<style>
+  :root{--bg:#0d0f14;--card:#161a22;--line:#262c38;--txt:#e8ebf1;--mut:#8b93a5;--acc:#f5c518;--ok:#3ecf8e;--err:#ff5d5d}
+  *{box-sizing:border-box}
+  body{margin:0;background:var(--bg);color:var(--txt);font:15px/1.45 system-ui,-apple-system,Segoe UI,Roboto,sans-serif}
+  .wrap{max-width:980px;margin:0 auto;padding:18px}
+  h1{font-size:1.5rem;margin:.2rem 0}
+  h1 span{color:var(--acc)}
+  .sub{color:var(--mut);margin:0 0 1rem}
+  .card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:16px;margin:0 0 14px}
+  .card h2{font-size:1rem;margin:0 0 .6rem;display:flex;gap:.5rem;align-items:center}
+  .num{background:var(--acc);color:#111;border-radius:50%;width:24px;height:24px;display:inline-grid;place-items:center;font-size:.8rem;font-weight:700}
+  label{display:block;color:var(--mut);font-size:.85rem;margin:.6rem 0 .25rem}
+  textarea,input[type=text],select{width:100%;background:#0f1218;color:var(--txt);border:1px solid var(--line);border-radius:10px;padding:10px;font:inherit}
+  textarea{resize:vertical}
+  .row{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:10px}
+  button{font:inherit;border:0;border-radius:10px;padding:10px 14px;cursor:pointer;background:#252b37;color:var(--txt)}
+  button.main{background:var(--acc);color:#111;font-weight:700;padding:13px 18px;font-size:1rem}
+  button:disabled{opacity:.45;cursor:not-allowed}
+  .drop{border:2px dashed var(--line);border-radius:12px;padding:22px;text-align:center;color:var(--mut);cursor:pointer}
+  .drop.over{border-color:var(--acc);color:var(--txt)}
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:12px;margin-top:12px}
+  .item{background:#0f1218;border:1px solid var(--line);border-radius:12px;overflow:hidden;display:flex;flex-direction:column}
+  .item .media{background:#000;aspect-ratio:16/9;display:grid;place-items:center;overflow:hidden}
+  .item img,.item video{width:100%;height:100%;object-fit:contain;display:block}
+  .item .body{padding:10px;display:flex;flex-direction:column;gap:6px}
+  .item textarea{min-height:64px;font-size:.85rem}
+  .st{font-size:.8rem;color:var(--mut)}
+  .st.ok{color:var(--ok)}.st.err{color:var(--err)}
+  .bar{height:5px;background:#222835;border-radius:5px;overflow:hidden}
+  .bar i{display:block;height:100%;width:0;background:var(--acc);transition:width .4s}
+  .acts{display:flex;gap:6px;flex-wrap:wrap}
+  .acts button,.acts a{font-size:.8rem;padding:6px 10px;border-radius:8px;background:#252b37;color:var(--txt);text-decoration:none}
+  .hint{font-size:.8rem;color:var(--mut);margin:.35rem 0 0}
+  .keysinfo{font-size:.85rem;margin-top:.4rem}
+  #log{font:12px/1.4 ui-monospace,Menlo,monospace;color:var(--mut);white-space:pre-wrap;max-height:160px;overflow:auto;margin:0}
+  details summary{cursor:pointer;color:var(--mut)}
+</style>
+</head>
+<body>
+<div class="wrap">
+  <h1>Agnes <span>Vidéo 5 s</span></h1>
+  <p class="sub">Tes images → des clips vidéo de 5 secondes, avec ta clé Agnes gratuite. Tout se passe dans ce navigateur.</p>
+
+  <div class="card">
+    <h2><span class="num">1</span> Tes clés API Agnes</h2>
+    <textarea id="keys" rows="3" placeholder="sk-... (une clé par ligne — clés de comptes différents pour aller plus vite)"></textarea>
+    <div class="keysinfo" id="keysInfo">Aucune clé.</div>
+    <p class="hint">Clé gratuite sur platform.agnes-ai.com → Settings → API Keys. Les clés restent enregistrées dans ce navigateur uniquement.</p>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">2</span> Tes images</h2>
+    <div class="drop" id="drop">📷 Clique ou glisse tes images ici (plusieurs possibles)</div>
+    <input type="file" id="file" accept="image/*" multiple hidden>
+    <label for="urlIn">…ou colle l'adresse web (URL) d'une image</label>
+    <div style="display:flex;gap:8px"><input type="text" id="urlIn" placeholder="https://…/image.png"><button id="addUrl">Ajouter</button></div>
+    <label for="prompt">Mouvement à donner (appliqué à toutes les images, modifiable image par image)</label>
+    <textarea id="prompt" rows="2" placeholder="Ex. : la caméra avance lentement, les cheveux bougent au vent, lumière cinématographique"></textarea>
+  </div>
+
+  <div class="card">
+    <h2><span class="num">3</span> Réglages</h2>
+    <div class="row">
+      <div><label for="ratio">Format</label>
+        <select id="ratio">
+          <option value="9:16">9:16 · vertical (TikTok)</option>
+          <option value="16:9">16:9 · horizontal</option>
+          <option value="1:1">1:1 · carré</option>
+          <option value="3:4">3:4 · portrait</option>
+          <option value="4:3">4:3 · paysage</option>
+          <option value="21:9">21:9 · cinéma</option>
+        </select></div>
+      <div><label for="secs">Durée</label>
+        <select id="secs">
+          <option value="4">4 s</option><option value="5" selected>5 s</option><option value="6">6 s</option>
+          <option value="8">8 s</option><option value="10">10 s</option><option value="12">12 s</option>
+        </select></div>
+      <div><label for="model">Modèle</label>
+        <select id="model">
+          <option value="agnes-video-2.5-flash">agnes-video-2.5-flash (recommandé)</option>
+          <option value="agnes-video-v2.0">agnes-video-v2.0 (ancien, 5 s fixe)</option>
+        </select></div>
+    </div>
+    <p class="hint">Qualité : 720p (seule option du modèle Flash). En gratuit, Agnes accepte environ 1 vidéo par minute et par compte : avec 1 clé, les images passent une par une.</p>
+  </div>
+
+  <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px">
+    <button class="main" id="go">🎬 Générer les vidéos</button>
+    <button id="stop" disabled>⏹ Arrêter</button>
+    <button id="clear">🗑 Vider la liste</button>
+  </div>
+
+  <div class="grid" id="grid"></div>
+
+  <div class="card" style="margin-top:14px">
+    <details><summary>Journal technique (en cas de problème)</summary><pre id="log"></pre></details>
+  </div>
+</div>
+
+<script>
+const BASE = 'https://apihub.agnes-ai.com';
+const $ = id => document.getElementById(id);
+const LS = { get(k, d){ try{ const v = localStorage.getItem(k); return v === null ? d : JSON.parse(v); }catch(e){ return d; } },
+             set(k, v){ try{ localStorage.setItem(k, JSON.stringify(v)); }catch(e){} } };
+const sleep = ms => new Promise(r => setTimeout(r, ms));
+function log(m){ const el = $('log'); el.textContent += '[' + new Date().toLocaleTimeString() + '] ' + m + '\n'; el.scrollTop = el.scrollHeight; }
+
+/* ---------- Clés ---------- */
+let keys = [];
+const keyState = {}; // key -> {busyUntil}
+function readKeys(){
+  keys = [...new Set($('keys').value.split(/\s+/).map(s => s.trim()).filter(k => k.startsWith('sk-') && k.length >= 20))];
+  LS.set('agv_keys', keys);
+  $('keysInfo').textContent = keys.length ? keys.length + ' clé(s) prête(s).' : 'Aucune clé.';
+  keys.forEach(k => { keyState[k] = keyState[k] || { busyUntil: 0 }; });
+}
+$('keys').value = LS.get('agv_keys', []).join('\n');
+$('keys').addEventListener('input', readKeys);
+readKeys();
+const COOLDOWN = 62000; // ~1 vidéo / minute / compte en gratuit
+async function takeKey(){
+  while (true){
+    if (stopped) throw new Error('Arrêté');
+    const now = Date.now();
+    const free = keys.filter(k => keyState[k].busyUntil <= now).sort((a, b) => keyState[a].busyUntil - keyState[b].busyUntil)[0];
+    if (free){ keyState[free].busyUntil = now + COOLDOWN; return free; }
+    await sleep(1000);
+  }
+}
+function maskKey(k){ return k.slice(0, 6) + '…' + k.slice(-4); }
+
+/* ---------- Images ---------- */
+const items = []; // {id, src(dataURL or url), isUrl, prompt, el, status}
+let seq = 0;
+function addItem(src, isUrl){
+  const it = { id: ++seq, src, isUrl, prompt: '', status: 'wait' };
+  const el = document.createElement('div');
+  el.className = 'item';
+  el.innerHTML = `<div class="media"><img alt="image source"></div>
+    <div class="body">
+      <textarea placeholder="Mouvement pour cette image (vide = texte général)"></textarea>
+      <div class="bar"><i></i></div>
+      <div class="st">En attente</div>
+      <div class="acts"><button data-del>Retirer</button></div>
+    </div>`;
+  el.querySelector('img').src = src;
+  el.querySelector('textarea').addEventListener('input', e => it.prompt = e.target.value);
+  el.querySelector('[data-del]').addEventListener('click', () => { if (it.status === 'run') return; el.remove(); items.splice(items.indexOf(it), 1); });
+  it.el = el;
+  items.push(it);
+  $('grid').appendChild(el);
+}
+function setSt(it, txt, cls, pct){
+  const st = it.el.querySelector('.st'); st.textContent = txt; st.className = 'st' + (cls ? ' ' + cls : '');
+  if (pct !== undefined) it.el.querySelector('.bar i').style.width = Math.max(0, Math.min(100, pct)) + '%';
+}
+// Réduit l'image (max 1280 px) pour un envoi plus léger
+function fileToDataUrl(file){
+  return new Promise((res, rej) => {
+    const fr = new FileReader();
+    fr.onload = () => {
+      const img = new Image();
+      img.onload = () => {
+        const max = 1280, s = Math.min(1, max / Math.max(img.width, img.height));
+        const c = document.createElement('canvas');
+        c.width = Math.round(img.width * s); c.height = Math.round(img.height * s);
+        c.getContext('2d').drawImage(img, 0, 0, c.width, c.height);
+        res(c.toDataURL('image/jpeg', 0.92));
+      };
+      img.onerror = () => rej(new Error('Image illisible'));
+      img.src = fr.result;
+    };
+    fr.onerror = () => rej(fr.error);
+    fr.readAsDataURL(file);
+  });
+}
+async function addFiles(files){
+  for (const f of files){ if (!f.type.startsWith('image/')) continue; try { addItem(await fileToDataUrl(f), false); } catch(e){ log('Image ignorée : ' + e.message); } }
+}
+$('drop').addEventListener('click', () => $('file').click());
+$('file').addEventListener('change', e => { addFiles(e.target.files); e.target.value = ''; });
+['dragover','dragenter'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.add('over'); }));
+['dragleave','drop'].forEach(ev => $('drop').addEventListener(ev, e => { e.preventDefault(); $('drop').classList.remove('over'); }));
+$('drop').addEventListener('drop', e => addFiles(e.dataTransfer.files));
+$('addUrl').addEventListener('click', () => {
+  const u = $('urlIn').value.trim();
+  if (!/^https?:\/\//i.test(u)) { alertBox('Colle une adresse qui commence par https://'); return; }
+  addItem(u, true); $('urlIn').value = '';
+});
+$('clear').addEventListener('click', () => { if (running) return; items.length = 0; $('grid').innerHTML = ''; });
+function alertBox(m){ log(m); const d = document.createElement('div'); d.className = 'card'; d.style.borderColor = 'var(--err)'; d.textContent = m; $('grid').before(d); setTimeout(() => d.remove(), 6000); }
+
+/* ---------- Appels Agnes ---------- */
+async function api(method, path, key, body){
+  const r = await fetch(BASE + path, { method, headers: { 'Authorization': 'Bearer ' + key, 'Content-Type': 'application/json' }, body: body ? JSON.stringify(body) : undefined });
+  const t = await r.text(); let d = null; try { d = JSON.parse(t); } catch(e){}
+  if (!r.ok){ const msg = (d && (d.error?.message || d.message)) || t.slice(0, 200); const err = new Error('HTTP ' + r.status + ' : ' + msg); err.status = r.status; throw err; }
+  return d || {};
+}
+// Méthode d'envoi d'une image locale. La doc Agnes demande une URL publique ;
+// on essaie dans l'ordre : data URL, base64 brut, puis hébergement via l'API image d'Agnes.
+const SEND_METHODS = ['dataurl', 'base64', 'hosted'];
+async function hostViaAgnes(dataUrl, key){
+  log('Hébergement de l\'image via Agnes Image (copie quasi identique)…');
+  const b64 = dataUrl.split(',')[1];
+  const d = await api('POST', '/v1/images/generations', key, {
+    model: 'agnes-image-2.5-flash', prompt: 'Keep the image exactly as it is. Do not change anything.', n: 1,
+    extra_body: { image: [b64], response_format: 'url' }
+  });
+  const u = d.data && d.data[0] && d.data[0].url;
+  if (!u) throw new Error('Pas d\'URL renvoyée par Agnes Image');
+  return u;
+}
+function buildBody(model, prompt, imageRef){
+  const ratio = $('ratio').value, secs = $('secs').value;
+  if (model === 'agnes-video-v2.0'){
+    const dims = { '16:9':[1152,768], '9:16':[768,1152], '1:1':[960,960], '3:4':[768,1024], '4:3':[1024,768], '21:9':[1344,576] }[ratio];
+    return { model, prompt, image: imageRef, width: dims[0], height: dims[1], num_frames: 121, frame_rate: 24 };
+  }
+  return { model, prompt, mode: 'keyframe', seconds: secs, size: '720P', aspect_ratio: ratio, n: 1, first_frame: imageRef };
+}
+async function createTask(it, key){
+  const model = $('model').value;
+  const prompt = (it.prompt.trim() || $('prompt').value.trim() || 'Subtle natural motion, slow cinematic camera movement');
+  if (it.isUrl) return { model, resp: await api('POST', '/v1/videos', key, buildBody(model, prompt, it.src)) };
+  const known = LS.get('agv_method', null);
+  const order = known ? [known, ...SEND_METHODS.filter(m => m !== known)] : SEND_METHODS;
+  let lastErr;
+  for (const m of order){
+    try {
+      let ref;
+      if (m === 'dataurl') ref = it.src;
+      else if (m === 'base64') ref = it.src.split(',')[1];
+      else { if (!it.hosted) it.hosted = await hostViaAgnes(it.src, key); ref = it.hosted; }
+      log('Envoi (' + m + ') avec ' + maskKey(key));
+      const resp = await api('POST', '/v1/videos', key, buildBody(model, prompt, ref));
+      LS.set('agv_method', m);
+      return { model, resp };
+    } catch(e){
+      lastErr = e; log('Échec méthode ' + m + ' : ' + e.message);
+      if (e.status === 429 || e.status === 401 || e.status === 403 || !e.status) throw e; // pas un problème de format
+    }
+  }
+  throw lastErr;
+}
+async function pollTask(it, key, model, videoId){
+  const t0 = Date.now();
+  while (true){
+    if (stopped) throw new Error('Arrêté');
+    if (Date.now() - t0 > 15 * 60000) throw new Error('Trop long (15 min) — réessaie plus tard');
+    await sleep(4000);
+    let d;
+    try { d = await api('GET', '/agnesapi?video_id=' + encodeURIComponent(videoId) + '&model_name=' + encodeURIComponent(model), key); }
+    catch(e){ log('Suivi : ' + e.message); if (e.status === 404) throw e; continue; }
+    const status = String(d.status || d.state || '').toLowerCase();
+    const pct = Number(d.progress) || 0;
+    setSt(it, 'Création de la vidéo… ' + (pct ? pct + ' %' : ''), '', 10 + pct * 0.9);
+    if (['completed','succeeded','done','success'].includes(status)){
+      const url = d.url || d.video_url || (d.result && d.result.video_url) || (d.data && d.data.url);
+      if (!url) throw new Error('Terminé mais sans lien vidéo');
+      return url;
+    }
+    if (['failed','error'].includes(status)) throw new Error((d.error && (d.error.message || d.error)) || 'Échec côté Agnes');
+  }
+}
+function showVideo(it, url){
+  it.el.querySelector('.media').innerHTML = `<video controls playsinline loop muted></video>`;
+  const v = it.el.querySelector('video'); v.src = url; v.play().catch(() => {});
+  const acts = it.el.querySelector('.acts');
+  acts.innerHTML = '';
+  const dl = document.createElement('button'); dl.textContent = '⬇️ Télécharger';
+  dl.addEventListener('click', () => downloadVideo(url, 'agnes_video_' + it.id + '.mp4'));
+  const open = document.createElement('a'); open.href = url; open.target = '_blank'; open.rel = 'noopener'; open.textContent = '↗ Ouvrir';
+  const cp = document.createElement('button'); cp.textContent = '📋 Copier le lien';
+  cp.addEventListener('click', () => navigator.clipboard.writeText(url).then(() => cp.textContent = '✓ Copié').catch(() => {}));
+  acts.append(dl, open, cp);
+  const hist = LS.get('agv_history', []); hist.unshift({ url, at: Date.now() }); LS.set('agv_history', hist.slice(0, 100));
+}
+async function downloadVideo(url, name){
+  try {
+    const b = await (await fetch(url)).blob();
+    const a = document.createElement('a'); a.href = URL.createObjectURL(b); a.download = name; document.body.appendChild(a); a.click(); a.remove();
+  } catch(e){ window.open(url, '_blank'); log('Téléchargement direct impossible, vidéo ouverte dans un onglet : fais clic droit → Enregistrer.'); }
+}
+
+/* ---------- File d'attente ---------- */
+let running = false, stopped = false;
+async function processItem(it){
+  for (let attempt = 1; attempt <= 4; attempt++){
+    const key = await takeKey();
+    try {
+      it.status = 'run';
+      setSt(it, 'Envoi à Agnes…', '', 5);
+      const { model, resp } = await createTask(it, key);
+      const videoId = resp.video_id || resp.id || resp.task_id || (resp.data && resp.data.video_id);
+      if (!videoId) throw new Error('Pas d\'identifiant de vidéo dans la réponse');
+      log('Tâche créée ' + videoId);
+      const url = await pollTask(it, key, model, videoId);
+      showVideo(it, url); it.status = 'done';
+      setSt(it, '✓ Vidéo prête', 'ok', 100);
+      return;
+    } catch(e){
+      if (stopped){ setSt(it, 'Arrêté', 'err'); it.status = 'wait'; return; }
+      log('Image ' + it.id + ' : ' + e.message);
+      if (e.status === 429){ keyState[key].busyUntil = Date.now() + COOLDOWN; setSt(it, 'Limite atteinte, nouvel essai dans ~1 min…', '', 0); continue; }
+      if (e.status === 401 || e.status === 403){ setSt(it, 'Clé refusée (' + maskKey(key) + ')', 'err'); keyState[key].busyUntil = Date.now() + 3600000; continue; }
+      if (attempt < 4 && (!e.status || e.status >= 500)){ setSt(it, 'Erreur réseau, nouvel essai…', '', 0); await sleep(3000); continue; }
+      it.status = 'error'; setSt(it, '❌ ' + e.message, 'err'); return;
+    }
+  }
+  it.status = 'error'; setSt(it, '❌ Échec après plusieurs essais', 'err');
+}
+$('go').addEventListener('click', async () => {
+  readKeys();
+  if (!keys.length){ alertBox('Ajoute au moins une clé API Agnes (étape 1).'); return; }
+  const todo = items.filter(it => it.status !== 'done' && it.status !== 'run');
+  if (!todo.length){ alertBox('Ajoute au moins une image (étape 2).'); return; }
+  running = true; stopped = false; $('go').disabled = true; $('stop').disabled = false;
+  todo.forEach(it => setSt(it, 'Dans la file d\'attente…', '', 0));
+  const workers = Math.min(keys.length, todo.length);
+  const queue = todo.slice();
+  await Promise.all(Array.from({ length: workers }, async () => { while (queue.length && !stopped) await processItem(queue.shift()); }));
+  running = false; $('go').disabled = false; $('stop').disabled = true;
+  log('Terminé.');
+});
+$('stop').addEventListener('click', () => { stopped = true; $('stop').disabled = true; });
+</script>
+</body>
+</html>
